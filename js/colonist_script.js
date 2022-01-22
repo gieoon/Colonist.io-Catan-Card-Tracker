@@ -1,4 +1,11 @@
 // UI container
+
+const getLoggedInUser = () => {
+    var username = document.querySelector('#header_profile_username').textContent;
+    console.log("got username: ", username);
+    return username;
+}
+
 username = getLoggedInUser();
 
 var createUIContainer = () => {
@@ -16,7 +23,7 @@ var updateUI = (serverResponse) => {
     var str = '';
     for (var playerEntry of Object.entries(serverResponse)) {
         str += `<div class="player_wrapper">${playerEntry[0]}`;
-        for (var r of Object.entries(playerEntry[1].resources)) {
+        for (var r of Object.entries(playerEntry[1])) {
             var imgString = `../dist/images/card_${r[0]}.svg?v124`
             str += `<div class="player_card">
                 <img src="${imgString}"/> 
@@ -176,23 +183,23 @@ var handleMessage = (container) => {
             var playerStealing = stripImageFromPlayerString(latestMessage.innerHTML.indexOf(startIndex));
             var playerStolenFromIndex = latestMessage.innerHTML.indexOf(' from:');
             var playerStolenFrom = stripImageFromPlayerString(latestMessage.innerHTML.substring(playerStolenFromIndex + ' from:'.length));
-            var resource = getResourceImages(latestMessage.innerHTML.substring(startIndex, playerStolenFromIndex));
+            var resources = getResourceImages(latestMessage.innerHTML.substring(startIndex, playerStolenFromIndex));
             sendToBackground({
                 type: 'robberKnown',
                 // playerStealingColor: messageColor, 
                 playerStealing: username,
                 playerStolenFrom: playerStolenFrom,
-                resource: resource,
+                resource: resources[0],
             });
         } else if (latestMessage.textContent.includes('from you')) {
             var playerStealingIndex = latestMessage.innerHTML.indexOf('stole: ');
             var playerStealing = stripImageFromPlayerString(latestMessage.innerHTML.substring(0, playerStealingIndex));
-            var resource = getResourceImages(latestMessage.innerHTML.substring(playerStealingIndex));
+            var resources = getResourceImages(latestMessage.innerHTML.substring(playerStealingIndex));
             sendToBackground({
                 type: 'robberKnown',
                 playerStealing: playerStealing,
                 playerStolenFrom: username,
-                resource: resource,
+                resource: resources[0],
             });
             // robber steal from you, the resource is known.
         } else if (latestMessage.textContent.includes(' stole ')) {
@@ -213,11 +220,6 @@ var handleMessage = (container) => {
     observer.observe(container, config);
 }
 
-var getLoggedInUser = () => {
-    var username = document.querySelector('#header_profile_username').textContent;
-    console.log("got username: ", username);
-    return username;
-}
 
 // Retrieve the child elements.
 var getResourceImages = (imagesText) => {

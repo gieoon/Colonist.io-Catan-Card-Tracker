@@ -3,16 +3,23 @@ URL = "https://colonist.io";
 const PLAYERS = {};
 const ROBS = {};
 
-const EMPTY_PLAYER_OBJECT = {
-    // name: '',
-    color: '',
-    resources: {
-        lumber: 0,
-        brick: 0,
-        wool: 0,
-        grain: 0,
-        ore: 0,
-    }
+function Player() {
+    // this.resources = {
+    //     color: '',
+    //     resources: {
+    //         lumber: 0,
+    //         brick: 0,
+    //         wool: 0,
+    //         grain: 0,
+    //         ore: 0,
+    //     }
+    // };
+    this.lumber = 0;
+    this.brick = 0;
+    this.wool = 0;
+    this.grain = 0;
+    this.ore = 0;
+    return this;
 }
 
 // Track unknown stolen cards until they are revealed.
@@ -119,7 +126,7 @@ chrome.runtime.onMessage.addListener(
       } else if (request.type === 'robberKnown') {
         // var player = getPlayerFromColor(request.playerStealingColor);
         incrementResource(request.playerStealing, request.resource);
-        decrementResource(request.playerStolenFrom, request.resource);
+        decrementResource(request.playerStolenFrom, request.resource, 1);
       }
       console.log('new players: ', PLAYERS);
         sendResponse(PLAYERS);
@@ -131,20 +138,21 @@ var incrementResource = (player, resource) => {
         console.error('UNDEFINED PLAYER!!!');
     }
     if (!PLAYERS[player]) {
-        PLAYERS[player] = Object.assign(EMPTY_PLAYER_OBJECT, {});
+        PLAYERS[player] = new Player();
     }
     resource = resource.trim();
-    PLAYERS[player].resources[resource] += 1;
-    console.log("incremented: ", player, resource, PLAYERS[player].resources);
+    // PLAYERS[player].resources[resource] += 1;
+    PLAYERS[player][resource] += 1;
+    console.log("incremented: ", player, resource, PLAYERS[player]);
 }
 
 var decrementResource = (player, resource, amount) => {
     if (!PLAYERS[player]) {
-        PLAYERS[player] = Object.assign(EMPTY_PLAYER_OBJECT, {});
+        PLAYERS[player] = new Player();
     }
     resource = resource.trim();
-    PLAYERS[player].resources[resource] -= amount;
-    console.log("decremented: ", player, resource, PLAYERS[player].resources);
+    PLAYERS[player][resource] -= amount;
+    console.log("decremented: ", player, resource, PLAYERS[player]);
 }
 
 var robUnknownResource = (playerStealing, playerStolenFrom) => {
@@ -160,13 +168,13 @@ var robUnknownResource = (playerStealing, playerStolenFrom) => {
 // Robbing a known resource
 var robKnownResource = (playerStealing, playerStolenFrom, resource) => {
     if (!PLAYERS[playerStealing]) {
-        PLAYERS[playerStealing] = Object.assign(EMPTY_PLAYER_OBJECT, {});
+        PLAYERS[playerStealing] = new Player();
     }
     if (!PLAYERS[playerStolenFrom]) {
-        PLAYERS[playerStolenFrom] = Object.assign(EMPTY_PLAYER_OBJECT, {});
+        PLAYERS[playerStolenFrom] = new Player();
     }
-    PLAYERS[playerStealing].resources[resource] =+ 1;
-    PLAYERS[playerStolenFrom].resources[resource] -+ 1;
+    PLAYERS[playerStealing][resource] =+ 1;
+    PLAYERS[playerStolenFrom][resource] -= 1;
 
 }
 
