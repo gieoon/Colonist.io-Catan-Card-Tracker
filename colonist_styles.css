@@ -1,0 +1,36 @@
+#colonist_powerup_wrapper {
+    position: absolute;
+    bottom: 50px;
+    width: 500px;
+    left: 0;
+    right: 0;
+    margin: auto;
+    /* background-color: rgba(0,0,0,.25); */
+    background-image: linear-gradient(to bottom,#fcfaf5,#e2d7c4);
+    padding: 10px;
+    border-radius: 5px;
+    color: black;
+    font-size: 15px;
+}
+
+#colonist_powerup_wrapper .player_wrapper {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: center;
+    
+}
+
+#colonist_powerup_wrapper .player_card {
+    display: flex;
+    width: 50px;
+}
+
+#colonist_powerup_wrapper .player_card span {
+    margin-left: 2.5px;
+}
+
+#colonist_powerup_wrapper .player_card img {
+    height: 25px;
+    object-fit: contain;
+}
