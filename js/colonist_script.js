@@ -2,7 +2,7 @@
 
 const getLoggedInUser = () => {
     var username = document.querySelector('#header_profile_username').textContent;
-    console.log("got username: ", username);
+    // console.log("got username: ", username);
     return username;
 }
 
@@ -19,20 +19,76 @@ var createUIContainer = () => {
 }
 
 var updateUI = (serverResponse) => {
+    var players = serverResponse.players;
+    var robs = serverResponse.robs;
     var wrapper = document.getElementById('colonist_powerup_wrapper');
     var str = '';
-    for (var playerEntry of Object.entries(serverResponse)) {
-        str += `<div class="player_wrapper">${playerEntry[0]}`;
-        for (var r of Object.entries(playerEntry[1])) {
-            var imgString = `../dist/images/card_${r[0]}.svg?v124`
-            str += `<div class="player_card">
-                <img src="${imgString}"/> 
-                <span>x ${r[1]}</span>
-            </div>`
+    for (var playerEntry of Object.entries(players)) {
+        var playerName = playerEntry[0];
+        var playerResources = playerEntry[1];
+        str += `<div class="player_wrapper">${playerName}`;
+        for (var r of Object.entries(playerResources)) {
+            var resourceName = r[0];
+            var resourceAmount = r[1];
+            var imgString = `../dist/images/card_${resourceName}.svg?v124`
+            if (resourceAmount > 0) {
+                str += `<div class="card_group">`;
+            }
+            for (var i=0;i<resourceAmount;i++) {
+                str += `<div class="player_card">
+                    <img src="${imgString}"/>`
+
+                // If last one in iteration, add count
+                if (i === resourceAmount - 1) {
+                    str += `<span class="count">${resourceAmount}</span>`;
+                }
+                str += `</div>`;
+            }
+            if (resourceAmount > 0) {
+                str += `</div>`;
+            }
         } 
+        // Add mystery card if robs exist.
+        var mysteryCardString = `../dist/images/card_rescardback.svg?v124`;
+        for (var rob of robs) {
+            // str += `<img src="${mysteryCardString}"/>`;    
+            var resources = calculateRobbedPercentageForCard(rob.resources, rob.total);
+            if (rob.playerStealing === playerName) {
+                str += `<div class="mystery_card_group">`;
+            
+                for (var resourceEntry of Object.entries(resources)) {
+                    str += '<div class="mystery_card">';
+                    var resourceName = resourceEntry[0];
+                    var probability = resourceEntry[1].probability;
+                    var imgString = `../dist/images/card_${resourceName}.svg?v124`;
+                    if (probability > 0) {
+                        str += `<img src="${imgString}"/>`
+                        str += `<span>${probability}%</span>`
+                    }
+                    str += '</div>';
+                }
+                str += '</div>';
+            }
+            
+        }
+
+        // <span>x ${r[1]}</span>
         str += '</div>';
         wrapper.innerHTML = str;
     }
+}
+
+// Given a card, card distributions, and totals, calculate and return the percentage likelihood of this card.
+var calculateRobbedPercentageForCard = (resources, total) => {
+    const out = resources.reduce((out, r) => {
+        return out[r] ? ++out[r].count : out[r] = {count: 1, probability: 0}, out
+    }, {});
+    for (var resource of Object.keys(out)) {
+        out[resource].probability = out[resource].count / total * 100;
+        out[resource].probability = out[resource].probability.toString().match(/^-?\d+(?:\.\d{0,2})?/)[0];
+    }
+    console.log('out: ', out);
+    return out;
 }
 
 var container = document.getElementById('game-log-text');
@@ -207,7 +263,7 @@ var handleMessage = (container) => {
             var startIndex = latestMessage.innerHTML.indexOf(' stole ');
             var playerStealingString = stripImageFromPlayerString(latestMessage.innerHTML.substring(0, startIndex));
             var playerStolenFromIndex = latestMessage.innerHTML.indexOf(' from: ');
-            var playerStolenFromString = stripImageFromPlayerString(latestMessage.innerHTML.substring(playerStolenFromIndex));
+            var playerStolenFromString = stripImageFromPlayerString(latestMessage.innerHTML.substring(playerStolenFromIndex + 'from: '.length));
             sendToBackground({
                 type: 'robberUnknown',
                 playerStealing: playerStealingString,
@@ -239,6 +295,21 @@ var stripImageFromPlayerString = (playerString) => {
     return d.textContent.trim();
 }
 
+// Refresh background script to remove other players.
+const resetPlayersInRoom = () => {
+    var players = Array.from(document.querySelectorAll('.room_player_info > div:nth-child(1) > span'));
+    const out = [];
+    for (var player of players) {
+        if (player.textContent.trim() !== 'Player') {
+            out.push(player.textContent.trim());
+        }
+    }
+    sendToBackground({
+        type: 'reset players',
+        players: out,
+    });
+};
+
 var sendToBackground = (obj) => {
     console.log(obj, obj.resources);
     chrome.runtime.sendMessage(obj, (res) => {
@@ -246,6 +317,8 @@ var sendToBackground = (obj) => {
         updateUI(res);
     })
 }
+
+resetPlayersInRoom();
 
 // Receive from background.
 // chrome.runtime.onMessage.addListener(

@@ -1,4 +1,5 @@
 #colonist_powerup_wrapper {
+    opacity: .65;
     position: absolute;
     bottom: 50px;
     width: 500px;
@@ -11,19 +12,26 @@
     border-radius: 5px;
     color: black;
     font-size: 15px;
+    pointer-events: none;
 }
 
 #colonist_powerup_wrapper .player_wrapper {
     display: flex;
     flex-wrap: nowrap;
-    justify-content: space-between;
+    justify-content: start; /*space-between; */
     align-items: center;
-    
+}
+
+#colonist_powerup_wrapper .card_group {
+    display: flex;
+    margin-left: 20px;
 }
 
 #colonist_powerup_wrapper .player_card {
     display: flex;
-    width: 50px;
+    width: fit-content;
+    position: relative;
+    margin-right: -22px;
 }
 
 #colonist_powerup_wrapper .player_card span {
@@ -31,6 +39,28 @@
 }
 
 #colonist_powerup_wrapper .player_card img {
-    height: 25px;
+    height: 40px;
     object-fit: contain;
+}
+
+#colonist_powerup_wrapper .player_card .count {
+    position: absolute;
+    top: 0;
+    right: 0;
+    border-bottom-left-radius: 999px;
+    background-color: darkblue;
+    color: white;
+    text-align: center;
+    font-size: 12px;
+    width: 12.5px;
+}
+
+#colonist_powerup_wrapper .mystery_card {
+    height: 20px!important;
+}
+
+#colonist_powerup_wrapper .mystery_card_group {
+    display: flex;
+    flex-wrap: wrap;
+    margin-left: 20px;
 }

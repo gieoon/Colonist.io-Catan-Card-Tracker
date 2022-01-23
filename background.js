@@ -1,7 +1,7 @@
 URL = "https://colonist.io";
 
 const PLAYERS = {};
-const ROBS = {};
+ROBBED_SOMETHING = [];
 
 function Player() {
     // this.resources = {
@@ -60,7 +60,14 @@ chrome.runtime.onMessage.addListener(
     //   console.log(sender.tab ?
     //               "from a content script:" + sender.tab.url :
     //               "from the extension");
-      if (request.type === 'got') {
+    if (request.type === 'reset players') {
+        for (var player of Object.keys(PLAYERS)) {
+            delete PLAYERS[player];
+            // if (!request.players.includes(player)) {
+            //     delete PLAYERS[player];
+            // }
+        }
+    }  else if (request.type === 'got') {
         for (var r of request.resources) {
             incrementResource(request.player, r);
         }
@@ -128,8 +135,11 @@ chrome.runtime.onMessage.addListener(
         incrementResource(request.playerStealing, request.resource);
         decrementResource(request.playerStolenFrom, request.resource, 1);
       }
-      console.log('new players: ', PLAYERS);
-        sendResponse(PLAYERS);
+      console.log('players: ', PLAYERS);
+        sendResponse({
+            robs: ROBBED_SOMETHING,
+            players: PLAYERS
+        });
     }
 );
 
@@ -153,16 +163,70 @@ var decrementResource = (player, resource, amount) => {
     resource = resource.trim();
     PLAYERS[player][resource] -= amount;
     console.log("decremented: ", player, resource, PLAYERS[player]);
+    if (PLAYERS[player][resource] < 0) {
+        resolveSteal(player);
+    }
 }
 
+var resolveSteal = (player) => {
+    // Find all instances where this player robbed.
+    var robs = ROBBED_SOMETHING.filter(f => f.playerStealing === player);
+    for (var rob of robs) {
+        // if (rob.probability)
+        print('rob to resolve: ', rob);
+    }
+}
+
+/*
+    - If the stealer uses a card they don't have, resolve this card deficit.
+    - If you steal a card from them they don't have, resolve as well.
+    - If stolen player uses cards and goes to 0, resolve the deficit.
+    - If anything goes under 0, resolve the deficit.
+
+    If a player has 4 cards, 
+    lumber, brick, wool, grain,
+    and robs another brick.
+    they have:
+    lumber, brick, wool, grain, unknown.
+    then they make a settlement, and are left with:
+    brick OR unknown.
+
+    However, if they had lumber, wool, wool, grain
+    and stole a brick.
+    They have: 
+    lumber, wool, wool, grain, unknown
+    However, after they make a settlement, their resources drop to
+    lumber:0, brick: -1, wool: 1, grain: 0
+    What they stole can be deduced as a brick, because -1 resources is impossible.
+
+    Every deduction, check if there is a -1, and then that is the stolen resource.
+*/
 var robUnknownResource = (playerStealing, playerStolenFrom) => {
-    // ROBS
+    // Get possible resources that were robbed.
     /*
-    1. Give the probability of the resource type, based on what the player currently holds.
-    2. Create a flow of that probability from stolen to stealer.
-    3. If the stealer uses a card they don't have, resolve this card deficit.
-    4. If stolen player uses cards and goes to 0, resolve the deficit.
+    If player has:
+    lumber, brick, wool
+    And one is stolen, stolen resources are:
+    [lumber, brick, wool]
+    and a marker is added to stolen player to signify that one of these is missing.
     */
+   var resources = [];
+   var total = 0;
+   for (var resource of ['lumber','brick','wool','grain','ore']) {
+       // Calculate probability of a resource having been stolen.
+       if (PLAYERS[playerStolenFrom][resource] > 0) {
+            total += PLAYERS[playerStolenFrom][resource];
+            for (var i=0;i<PLAYERS[playerStolenFrom][resource];i++) {
+                resources.push(resource);
+            }
+       }
+   }
+    ROBBED_SOMETHING.push({
+        playerStealing: playerStealing,
+        playerStolenFrom: playerStolenFrom,
+        resources: resources,
+        total: total,
+    });
 }
 
 // Robbing a known resource
