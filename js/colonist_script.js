@@ -6,7 +6,9 @@ const getLoggedInUser = () => {
     return username;
 }
 
-username = getLoggedInUser();
+let username = getLoggedInUser();
+
+let lastMessageIndex = 0;
 
 var createUIContainer = () => {
     var d = document.createElement('div');
@@ -110,165 +112,176 @@ var timer = setInterval(() => {
 // Handle messages.
 var handleMessage = (container) => {
     var callback = () => {
-        var latestMessage = container.lastChild;
-        var messageColor = latestMessage.style.color;
 
-        // String comparison to classify message type.
-        if (latestMessage.textContent.includes('built a')) {
-            var startIndex = latestMessage.innerHTML.indexOf('built a');
-            var playerString = latestMessage.innerHTML.substring(0, startIndex);
-            var resourceText = latestMessage.innerHTML.substring(startIndex);
-            var resources = getResourceImages(resourceText);
-            sendToBackground({
-                type: 'built',
-                player: stripImageFromPlayerString(playerString),
-                built: resources[0],
-            });
-        }
-        else if (latestMessage.textContent.includes(" got: ")) {
-            // Retrieve images coming after 'got: ' (to ignore player images)
-            var startIndex = latestMessage.innerHTML.indexOf(' got: ');
-            var imageText = latestMessage.innerHTML.substring(startIndex);
-            var resourceTypes = getResourceImages(imageText);
-            var playerString = latestMessage.innerHTML.substring(0, startIndex);
-            // console.log(stripImageFromPlayerString(playerString), 'got: ', resourceTypes);
-            sendToBackground({
-                type: 'got',
-                player: stripImageFromPlayerString(playerString),
-                resources: resourceTypes,
-            });
-        } else if (latestMessage.textContent.includes("took from bank:")) {
-            // year of plenty,
-            var startIndex = latestMessage.innerHTML.indexOf('took from bank:');
-            var playerString = latestMessage.innerHTML.substring(0, startIndex);
-            var resources = getResourceImages(latestMessage.innerHTML.substring(startIndex));
-            sendToBackground({
-                type: 'took from bank',
-                player: stripImageFromPlayerString(playerString),
-                resources: resources,
-            });
-        } else if (latestMessage.textContent.includes(" bought ")) {
-            var startIndex = latestMessage.innerHTML.indexOf(' bought ');
-            var playerString = latestMessage.innerHTML.substring(0, startIndex);
-            var resources = getResourceImages(latestMessage.innerHTML.substring(startIndex));
-            sendToBackground({
-                type: 'bought',
-                player: stripImageFromPlayerString(playerString),
-                item: resources[0],
-            });
+        let allMessages = Array.from(document.querySelectorAll('.message-post'))
+        let messages = allMessages.slice(lastMessageIndex);
+        lastMessageIndex = allMessages.length;
+        console.log("lastMessageIndex", lastMessageIndex);
         
-        } else if (latestMessage.textContent.includes("starting resources")) {
-            var startIndex = latestMessage.innerHTML.indexOf('received starting resources');
-            var resourceImages = latestMessage.innerHTML.substring(startIndex);
-            var resourceTypes = getResourceImages(resourceImages);
-            var playerString = latestMessage.innerHTML.substring(0, startIndex);
-            // console.log(stripImageFromPlayerString(playerString), ' starting resources: ', resourceTypes);
-            sendToBackground({
-                type: 'starting resources',
-                player: stripImageFromPlayerString(playerString),
-                resources: resourceTypes,
-            });
-        } else if (latestMessage.textContent.includes(" discarded: ")) {
-            var startIndex = latestMessage.innerHTML.indexOf(' discarded: ');
-            var imageText = latestMessage.innerHTML.substring(startIndex);
-            var resourceTypes = getResourceImages(imageText);
-            var playerString = latestMessage.innerHTML.substring(0, startIndex);
-            // console.log(stripImageFromPlayerString(playerString), 'discarded: ', resourceTypes);
-            sendToBackground({
-                type: 'discarded',
-                player: stripImageFromPlayerString(playerString),
-                resources: resourceTypes,
-            });
-        }  else if (latestMessage.textContent.includes(" gave bank: ")) {
-            var startIndex = latestMessage.innerHTML.indexOf(' gave bank: ');
-            var endIndex = latestMessage.innerHTML.indexOf(' and took');
-            var gaveImageText = latestMessage.innerHTML.substring(startIndex, endIndex);
-            var gotImageText = latestMessage.innerHTML.substring(endIndex);
-            var gaveResources = getResourceImages(gaveImageText);
-            var gotResources = getResourceImages(gotImageText);
-            var playerString = latestMessage.innerHTML.substring(0, startIndex);
-            // console.log(stripImageFromPlayerString(playerString), 'gave bank: ', gaveResources);
-            // console.log(stripImageFromPlayerString(playerString), 'took from bank: ', gotResources);
-            sendToBackground({
-                player: stripImageFromPlayerString(playerString),
-                type: 'gave bank',
-                gaveResources: gaveResources,
-                gotResources: gotResources,
-            });
-        } else if (latestMessage.textContent.includes(" traded:")) {
+        for (let latestMessage of messages) {
+            // var latestMessage = container.lastChild;
+            console.log("handling message: ", latestMessage.textContent);
+            // var messageColor = latestMessage.style.color;
+
+            // String comparison to classify message type.
+            if (latestMessage.textContent.includes('built a')) {
+                var startIndex = latestMessage.innerHTML.indexOf('built a');
+                var playerString = latestMessage.innerHTML.substring(0, startIndex);
+                var resourceText = latestMessage.innerHTML.substring(startIndex);
+                var resources = getResourceImages(resourceText);
+                sendToBackground({
+                    type: 'built',
+                    player: stripImageFromPlayerString(playerString),
+                    built: resources[0],
+                });
+            } else if (latestMessage.textContent.includes("took from bank")) {
+                // year of plenty,
+                var startIndex = latestMessage.innerHTML.indexOf('took from bank');
+                var playerString = latestMessage.innerHTML.substring(0, startIndex);
+                var resources = getResourceImages(latestMessage.innerHTML.substring(startIndex));
+                sendToBackground({
+                    type: 'took from bank',
+                    player: stripImageFromPlayerString(playerString),
+                    resources: resources,
+                });
+            } else if (latestMessage.textContent.includes(" bought ")) {
+                var startIndex = latestMessage.innerHTML.indexOf(' bought ');
+                var playerString = latestMessage.innerHTML.substring(0, startIndex);
+                var resources = getResourceImages(latestMessage.innerHTML.substring(startIndex));
+                sendToBackground({
+                    type: 'bought',
+                    player: stripImageFromPlayerString(playerString),
+                    item: resources[0],
+                });
             
-            /*
-                <img src="../dist/images/icon_player.svg?v124" alt="Guest" height="20" width="20">
-                NACHO#5480 traded:  
-                <img src="../dist/images/card_grain.svg?v124" alt="grain" height="20" width="14.25" class="lobby-chat-text-icon">
-                for:  <img src="../dist/images/card_brick.svg?v124" alt=" brick" height="20" width="14.25" class="lobby-chat-text-icon">
-                <img src="../dist/images/card_brick.svg?v124" alt=" brick" height="20" width="14.25" class="lobby-chat-text-icon">
-                with: Peanut#0012
-            */
-            var tradedStartIndex = latestMessage.innerHTML.indexOf(' traded:');
-            var tradedEndIndex = latestMessage.innerHTML.indexOf('for: ');
-            var traded2StartIndex = latestMessage.innerHTML.indexOf('for: ') + 'for: '.length;
-            var traded2EndIndex = latestMessage.innerHTML.indexOf(' with: ') + ' with: '.length;
-            var player1String = latestMessage.innerHTML.substring(0, tradedStartIndex);
-            var player2String = latestMessage.innerHTML.substring(traded2EndIndex);
-            var gaveTradeText = getResourceImages(latestMessage.innerHTML.substring(tradedStartIndex, tradedEndIndex));
-            var gotTradeText = getResourceImages(latestMessage.innerHTML.substring(traded2StartIndex, traded2EndIndex));
-            // console.log(stripImageFromPlayerString(player1String), stripImageFromPlayerString(player2String), gaveTradeText, gotTradeText);
-            sendToBackground({
-                type: 'traded',
-                player1: stripImageFromPlayerString(player1String),
-                player2: stripImageFromPlayerString(player2String),
-                gaveResources: gaveTradeText,
-                gotResources: gotTradeText,
-            });
-        } else if (latestMessage.textContent.match(/stole ([0-9]+):/) !== null) {
-            // monopoly stole X resources
-            var m = latestMessage.textContent.match(/stole ([0-9]+):/);
-            var playerString = latestMessage.innerHTML.substring(0, m.index);
-            var resourceAmount = m[1];
-            var resource = getResourceImages(latestMessage.innerHTML.substring(m.index));
-            sendToBackground({
-                type: 'monopoly',
-                player: stripImageFromPlayerString(playerString),
-                amount: resourceAmount,
-                resource: resource
-            });
-        } else if (latestMessage.textContent.includes('You stole:')) {
-            // You steal from someone.
-            var startIndex = latestMessage.innerHTML.indexOf('You stole:');
-            var playerStealing = stripImageFromPlayerString(latestMessage.innerHTML.indexOf(startIndex));
-            var playerStolenFromIndex = latestMessage.innerHTML.indexOf(' from:');
-            var playerStolenFrom = stripImageFromPlayerString(latestMessage.innerHTML.substring(playerStolenFromIndex + ' from:'.length));
-            var resources = getResourceImages(latestMessage.innerHTML.substring(startIndex, playerStolenFromIndex));
-            sendToBackground({
-                type: 'robberKnown',
-                // playerStealingColor: messageColor, 
-                playerStealing: username,
-                playerStolenFrom: playerStolenFrom,
-                resource: resources[0],
-            });
-        } else if (latestMessage.textContent.includes('from you')) {
-            var playerStealingIndex = latestMessage.innerHTML.indexOf('stole: ');
-            var playerStealing = stripImageFromPlayerString(latestMessage.innerHTML.substring(0, playerStealingIndex));
-            var resources = getResourceImages(latestMessage.innerHTML.substring(playerStealingIndex));
-            sendToBackground({
-                type: 'robberKnown',
-                playerStealing: playerStealing,
-                playerStolenFrom: username,
-                resource: resources[0],
-            });
-            // robber steal from you, the resource is known.
-        } else if (latestMessage.textContent.includes(' stole ')) {
-            // Robber unknown steal
-            var startIndex = latestMessage.innerHTML.indexOf(' stole ');
-            var playerStealingString = stripImageFromPlayerString(latestMessage.innerHTML.substring(0, startIndex));
-            var playerStolenFromIndex = latestMessage.innerHTML.indexOf(' from: ');
-            var playerStolenFromString = stripImageFromPlayerString(latestMessage.innerHTML.substring(playerStolenFromIndex + 'from: '.length));
-            sendToBackground({
-                type: 'robberUnknown',
-                playerStealing: playerStealingString,
-                playerStolenFrom: playerStolenFromString,
-            });
+            } else if (latestMessage.textContent.includes("starting resources")) {
+                var startIndex = latestMessage.innerHTML.indexOf('received starting resources');
+                var resourceImages = latestMessage.innerHTML.substring(startIndex);
+                var resourceTypes = getResourceImages(resourceImages);
+                var playerString = latestMessage.innerHTML.substring(0, startIndex);
+                // console.log(stripImageFromPlayerString(playerString), ' starting resources: ', resourceTypes);
+                sendToBackground({
+                    type: 'starting resources',
+                    player: stripImageFromPlayerString(playerString),
+                    resources: resourceTypes,
+                });
+            } else if (latestMessage.textContent.includes(" discarded ")) {
+                var startIndex = latestMessage.innerHTML.indexOf(' discarded ');
+                var imageText = latestMessage.innerHTML.substring(startIndex);
+                var resourceTypes = getResourceImages(imageText);
+                var playerString = latestMessage.innerHTML.substring(0, startIndex);
+                // console.log(stripImageFromPlayerString(playerString), 'discarded: ', resourceTypes);
+                sendToBackground({
+                    type: 'discarded',
+                    player: stripImageFromPlayerString(playerString),
+                    resources: resourceTypes,
+                });
+            }  else if (latestMessage.textContent.includes(" gave bank ")) {
+                var startIndex = latestMessage.innerHTML.indexOf(' gave bank ');
+                var endIndex = latestMessage.innerHTML.indexOf(' and took');
+                var gaveImageText = latestMessage.innerHTML.substring(startIndex, endIndex);
+                var gotImageText = latestMessage.innerHTML.substring(endIndex);
+                var gaveResources = getResourceImages(gaveImageText);
+                var gotResources = getResourceImages(gotImageText);
+                var playerString = latestMessage.innerHTML.substring(0, startIndex);
+                // console.log(stripImageFromPlayerString(playerString), 'gave bank: ', gaveResources);
+                // console.log(stripImageFromPlayerString(playerString), 'took from bank: ', gotResources);
+                sendToBackground({
+                    player: stripImageFromPlayerString(playerString),
+                    type: 'gave bank',
+                    gaveResources: gaveResources,
+                    gotResources: gotResources,
+                });
+            } else if (latestMessage.textContent.includes(" gave")) {
+                
+                /*
+                    <img src="../dist/images/icon_player.svg?v124" alt="Guest" height="20" width="20">
+                    NACHO#5480 traded:  
+                    <img src="../dist/images/card_grain.svg?v124" alt="grain" height="20" width="14.25" class="lobby-chat-text-icon">
+                    for:  <img src="../dist/images/card_brick.svg?v124" alt=" brick" height="20" width="14.25" class="lobby-chat-text-icon">
+                    <img src="../dist/images/card_brick.svg?v124" alt=" brick" height="20" width="14.25" class="lobby-chat-text-icon">
+                    with: Peanut#0012
+                */
+                var tradedStartIndex = latestMessage.innerHTML.indexOf(' gave');
+                var tradedEndIndex = latestMessage.innerHTML.indexOf('and got ');
+                var traded2StartIndex = latestMessage.innerHTML.indexOf('and got ') + 'and got '.length;
+                var traded2EndIndex = latestMessage.innerHTML.indexOf(' from ') + ' from '.length;
+                var player1String = latestMessage.innerHTML.substring(0, tradedStartIndex);
+                var player2String = latestMessage.innerHTML.substring(traded2EndIndex);
+                var gaveTradeText = getResourceImages(latestMessage.innerHTML.substring(tradedStartIndex, tradedEndIndex));
+                var gotTradeText = getResourceImages(latestMessage.innerHTML.substring(traded2StartIndex, traded2EndIndex));
+                // console.log(stripImageFromPlayerString(player1String), stripImageFromPlayerString(player2String), gaveTradeText, gotTradeText);
+                sendToBackground({
+                    type: 'traded',
+                    player1: stripImageFromPlayerString(player1String),
+                    player2: stripImageFromPlayerString(player2String),
+                    gaveResources: gaveTradeText,
+                    gotResources: gotTradeText,
+                });
+            } 
+            else if (latestMessage.textContent.match(/stole ([0-9]+)/) !== null) {
+                // monopoly stole X resources
+                var m = latestMessage.textContent.match(/stole ([0-9]+)/);
+                var playerString = latestMessage.innerHTML.substring(0, m.index);
+                var resourceAmount = m[1];
+                var resource = getResourceImages(latestMessage.innerHTML.substring(m.index));
+                sendToBackground({
+                    type: 'monopoly',
+                    player: stripImageFromPlayerString(playerString),
+                    amount: resourceAmount,
+                    resource: resource
+                });
+            } else if (latestMessage.textContent.includes('You stole')) {
+                // You steal from someone.
+                var startIndex = latestMessage.innerHTML.indexOf('You stole');
+                var playerStealing = stripImageFromPlayerString(latestMessage.innerHTML.indexOf(startIndex));
+                var playerStolenFromIndex = latestMessage.innerHTML.indexOf(' from');
+                var playerStolenFrom = stripImageFromPlayerString(latestMessage.innerHTML.substring(playerStolenFromIndex + ' from'.length));
+                var resources = getResourceImages(latestMessage.innerHTML.substring(startIndex, playerStolenFromIndex));
+                console.log('playerStealing: ', playerStealing, 'resources: ', resources, ", playerStolenFrom: ", playerStolenFrom);
+                sendToBackground({
+                    type: 'robberKnown',
+                    // playerStealingColor: messageColor, 
+                    playerStealing: username,
+                    playerStolenFrom: playerStolenFrom,
+                    resource: resources[0],
+                });
+            } else if (latestMessage.textContent.includes('from you')) {
+                var playerStealingIndex = latestMessage.innerHTML.indexOf('stole ');
+                var playerStealing = stripImageFromPlayerString(latestMessage.innerHTML.substring(0, playerStealingIndex));
+                var resources = getResourceImages(latestMessage.innerHTML.substring(playerStealingIndex));
+                console.log('playerStealing: ', playerStealing, 'resources: ', resources, ", playerStolenFrom: ", playerStolenFrom);
+                sendToBackground({
+                    type: 'robberKnown',
+                    playerStealing: playerStealing,
+                    playerStolenFrom: username,
+                    resource: resources[0],
+                });
+                // robber steal from you, the resource is known.
+            } else if (latestMessage.textContent.includes(' stole ')) {
+                // Robber unknown steal
+                var startIndex = latestMessage.innerHTML.indexOf(' stole ');
+                var playerStealingString = stripImageFromPlayerString(latestMessage.innerHTML.substring(0, startIndex));
+                var playerStolenFromIndex = latestMessage.innerHTML.indexOf(' from: ');
+                var playerStolenFromString = stripImageFromPlayerString(latestMessage.innerHTML.substring(playerStolenFromIndex + 'from: '.length));
+                sendToBackground({
+                    type: 'robberUnknown',
+                    playerStealing: playerStealingString,
+                    playerStolenFrom: playerStolenFromString,
+                });
+            } else if (latestMessage.textContent.includes(" got ")) {
+                // Retrieve images coming after 'got: ' (to ignore player images)
+                var startIndex = latestMessage.innerHTML.indexOf(' got ');
+                var imageText = latestMessage.innerHTML.substring(startIndex);
+                var resourceTypes = getResourceImages(imageText);
+                var playerString = latestMessage.innerHTML.substring(0, startIndex);
+                // console.log(stripImageFromPlayerString(playerString), 'got: ', resourceTypes);
+                sendToBackground({
+                    type: 'got',
+                    player: stripImageFromPlayerString(playerString),
+                    resources: resourceTypes,
+                });
+            } 
         }
     }
     const observer = new MutationObserver(callback);
